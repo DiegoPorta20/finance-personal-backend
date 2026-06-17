@@ -15,12 +15,24 @@ deploy por SSH a cada push a `main`.
   - **NO** abras `3306`. MySQL queda solo en la red interna de docker.
 - (Recomendado) Asigna una **Elastic IP** para que la IP no cambie al reiniciar.
 
-## 2. Instalar Docker en el EC2
+## 2. Instalar Docker en el EC2 (Amazon Linux 2023, x86_64)
 
 ```bash
-sudo apt-get update && sudo apt-get install -y docker.io docker-compose-plugin awscli
-sudo usermod -aG docker $USER && newgrp docker   # usar docker sin sudo
+sudo dnf install -y docker
+sudo systemctl enable --now docker
+sudo usermod -aG docker ec2-user            # usar docker sin sudo
+
+# Plugin de docker compose (AL2023 no lo trae en su repo por defecto)
+sudo mkdir -p /usr/local/lib/docker/cli-plugins
+sudo curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
+  -o /usr/local/lib/docker/cli-plugins/docker-compose
+sudo chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+
+# aws cli ya viene preinstalado en Amazon Linux 2023.
 ```
+
+> Tras el `usermod`, cierra la sesión SSH y vuelve a entrar para que tu usuario
+> tome el grupo `docker` (si no, usa `sudo docker ...`).
 
 ## 3. Preparar la carpeta del proyecto en el EC2
 
@@ -83,7 +95,7 @@ docker compose -f docker-compose.prod.yml exec api npx tsx prisma/seed.ts
 ```bash
 crontab -e
 # añade:
-0 3 * * * BACKUP_BUCKET=s3://TU-BUCKET/finanzas DB_NAME=finanzas_db /home/ubuntu/finance-personal/scripts/backup-db.sh >> /home/ubuntu/backup.log 2>&1
+0 3 * * * BACKUP_BUCKET=s3://TU-BUCKET/finanzas DB_NAME=finanzas_db /home/ec2-user/finance-personal/scripts/backup-db.sh >> /home/ec2-user/backup.log 2>&1
 ```
 
 4. Activa una **lifecycle rule** en el bucket para borrar backups > 30 días.
