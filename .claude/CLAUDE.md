@@ -85,15 +85,6 @@ npx prisma migrate dev     # aplicar migraciones en desarrollo
 npx prisma studio          # explorar la base de datos
 ```
 
-## Variables de entorno esperadas
-
-```
-DATABASE_URL=mysql://user:password@localhost:3306/finanzas_db
-JWT_SECRET=
-JWT_EXPIRES_IN=
-PORT=
-```
-
 ## Qué evitar
 
 - No exponer nunca el `passwordHash` u otros campos sensibles en las respuestas (usar DTOs de salida o `select` explícito en Prisma).
