@@ -2,21 +2,56 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { CreateTransactionDto } from './dto/create-transaction.dto.js';
 import { UpdateTransactionDto } from './dto/update-transaction.dto.js';
+import { buildPaginatedResponse } from '../../common/dto/pagination.dto.js';
+
+export interface TransactionFilters {
+  type?: string;
+  accountId?: string;
+  categoryId?: string;
+  startDate?: string;
+  endDate?: string;
+  minAmount?: number;
+  maxAmount?: number;
+}
 
 @Injectable()
 export class TransactionsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  findAll(userId: string, filters?: { type?: string; accountId?: string }) {
-    return this.prisma.transaction.findMany({
-      where: {
-        userId,
-        ...(filters?.type && { type: filters.type }),
-        ...(filters?.accountId && { accountId: filters.accountId }),
-      },
-      include: { category: true, account: true },
-      orderBy: { date: 'desc' },
-    });
+  async findAll(
+    userId: string,
+    filters?: TransactionFilters,
+    page = 1,
+    limit = 20,
+  ) {
+    const where: any = { userId };
+
+    if (filters?.type) where.type = filters.type;
+    if (filters?.accountId) where.accountId = filters.accountId;
+    if (filters?.categoryId) where.categoryId = filters.categoryId;
+    if (filters?.startDate || filters?.endDate) {
+      where.date = {};
+      if (filters.startDate) where.date.gte = new Date(filters.startDate);
+      if (filters.endDate) where.date.lte = new Date(filters.endDate);
+    }
+    if (filters?.minAmount !== undefined || filters?.maxAmount !== undefined) {
+      where.amount = {};
+      if (filters.minAmount !== undefined) where.amount.gte = filters.minAmount;
+      if (filters.maxAmount !== undefined) where.amount.lte = filters.maxAmount;
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.transaction.findMany({
+        where,
+        include: { category: true, account: true },
+        orderBy: { date: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.transaction.count({ where }),
+    ]);
+
+    return buildPaginatedResponse(data, total, page, limit);
   }
 
   async findOne(id: string, userId: string) {

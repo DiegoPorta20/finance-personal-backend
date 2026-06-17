@@ -10,6 +10,7 @@ const mockPrisma = {
     create: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
+    count: jest.fn(),
   },
   account: {
     update: jest.fn(),
@@ -33,23 +34,48 @@ describe('TransactionsService', () => {
   });
 
   describe('findAll', () => {
-    it('should return transactions for the user', async () => {
+    it('should return paginated transactions', async () => {
       const transactions = [{ id: '1', type: 'expense', userId: 'user-1' }];
       mockPrisma.transaction.findMany.mockResolvedValue(transactions);
+      mockPrisma.transaction.count.mockResolvedValue(1);
 
       const result = await service.findAll('user-1');
 
-      expect(result).toEqual(transactions);
+      expect(result.data).toEqual(transactions);
+      expect(result.meta.total).toBe(1);
+      expect(result.meta.page).toBe(1);
     });
 
     it('should filter by type', async () => {
       mockPrisma.transaction.findMany.mockResolvedValue([]);
+      mockPrisma.transaction.count.mockResolvedValue(0);
 
       await service.findAll('user-1', { type: 'income' });
 
       expect(mockPrisma.transaction.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: expect.objectContaining({ type: 'income' }),
+        }),
+      );
+    });
+
+    it('should filter by date range', async () => {
+      mockPrisma.transaction.findMany.mockResolvedValue([]);
+      mockPrisma.transaction.count.mockResolvedValue(0);
+
+      await service.findAll('user-1', {
+        startDate: '2026-01-01',
+        endDate: '2026-01-31',
+      });
+
+      expect(mockPrisma.transaction.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            date: {
+              gte: new Date('2026-01-01'),
+              lte: new Date('2026-01-31'),
+            },
+          }),
         }),
       );
     });

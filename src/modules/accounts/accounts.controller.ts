@@ -13,7 +13,10 @@ import { CreateAccountDto } from './dto/create-account.dto.js';
 import { UpdateAccountDto } from './dto/update-account.dto.js';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 
+@ApiTags('Accounts')
+@ApiBearerAuth()
 @Controller('accounts')
 @UseGuards(JwtAuthGuard)
 export class AccountsController {

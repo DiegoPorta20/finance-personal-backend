@@ -13,7 +13,10 @@ import { CreateCategoryDto } from './dto/create-category.dto.js';
 import { UpdateCategoryDto } from './dto/update-category.dto.js';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
+import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 
+@ApiTags('Categories')
+@ApiBearerAuth()
 @Controller('categories')
 @UseGuards(JwtAuthGuard)
 export class CategoriesController {

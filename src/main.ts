@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module.js';
 
 async function bootstrap() {
@@ -12,6 +13,17 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('Finanzas Personales API')
+    .setDescription('API para la app de finanzas personales')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api/docs', app, document);
+
   await app.listen(process.env['PORT'] ?? 3000);
 }
 bootstrap();

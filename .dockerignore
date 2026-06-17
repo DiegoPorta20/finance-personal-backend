@@ -1,0 +1,25 @@
+# Nunca copiar node_modules/dist/generated del host (binarios Windows romperían la imagen Linux)
+node_modules
+dist
+generated
+
+.git
+.github
+.vscode
+.idea
+
+# Secretos y entornos locales
+.env
+.env.*
+!.env.example
+
+# Artefactos y docs que no afectan el runtime
+coverage
+*.log
+README.md
+DEPLOYMENT.md
+docker-compose*.yml
+Dockerfile
+.dockerignore
+Caddyfile
+scripts
