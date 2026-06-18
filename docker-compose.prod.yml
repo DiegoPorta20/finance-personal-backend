@@ -28,8 +28,8 @@ services:
       MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
-    # IMPORTANTE: sin `ports:` -> MySQL NO se expone al host ni a internet.
-    # Solo la API lo alcanza por la red interna `appnet`.
+    ports:
+      - "127.0.0.1:3306:3306"
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD}"]
       interval: 10s
