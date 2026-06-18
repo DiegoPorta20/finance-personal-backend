@@ -1,21 +1,21 @@
 name: Deploy to EC2
 
-# Despliega al hacer push a main. Si despliegas desde otra rama (p. ej. develop),
-# cambia la lista de branches. workflow_dispatch permite lanzarlo manualmente.
+# Despliega al hacer push. Ajusta la lista de branches segun tu flujo.
+# workflow_dispatch permite lanzarlo manualmente desde la pestana Actions.
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   workflow_dispatch:
 
 env:
-  IMAGE: ghcr.io/diegoporta20/finance-personal-backend
+  AWS_REGION: us-east-2
+  IMAGE: 896489643360.dkr.ecr.us-east-2.amazonaws.com/finance-backend
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
     steps:
       - uses: actions/checkout@v4
 
@@ -29,14 +29,18 @@ jobs:
       - run: npm run build
       - run: npm test --if-present
 
-      # ---- Build + push de la imagen a GHCR ----
-      - name: Log in to GHCR
-        uses: docker/login-action@v3
+      # ---- Login a AWS ECR (con access keys guardadas en secrets) ----
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
+      - name: Log in to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # ---- Build + push de la imagen a ECR ----
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
@@ -48,7 +52,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # ---- Deploy: SSH al EC2, pull de la nueva imagen y up ----
+      # ---- Deploy: SSH al EC2, login a ECR (via rol IAM de la instancia), pull y up ----
       - name: Deploy on EC2 over SSH
         uses: appleboy/ssh-action@v1
         with:
@@ -57,7 +61,8 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd ~/finanzas
-            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            aws ecr get-login-password --region ${{ env.AWS_REGION }} \
+              | docker login --username AWS --password-stdin 896489643360.dkr.ecr.us-east-2.amazonaws.com
             docker compose --env-file .env.production -f docker-compose.prod.yml pull
             docker compose --env-file .env.production -f docker-compose.prod.yml up -d
             docker image prune -f
