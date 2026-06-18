@@ -40,6 +40,10 @@ jobs:
       - name: Log in to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
+      # Necesario para que `cache-to: type=gha` funcione (driver docker-container).
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       # ---- Build + push de la imagen a ECR ----
       - name: Build and push
         uses: docker/build-push-action@v6
