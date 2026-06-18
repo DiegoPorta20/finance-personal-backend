@@ -12,6 +12,9 @@ const mockPrisma = {
     findUnique: jest.fn(),
     create: jest.fn(),
   },
+  category: {
+    createMany: jest.fn(),
+  },
 };
 
 const mockJwtService = {
@@ -55,6 +58,8 @@ describe('AuthService', () => {
           name: 'Test',
         },
       });
+      // Debe sembrar las categorías por defecto del nuevo usuario.
+      expect(mockPrisma.category.createMany).toHaveBeenCalled();
     });
 
     it('should throw ConflictException if email exists', async () => {

@@ -29,9 +29,8 @@ describe('CategoriesService', () => {
   });
 
   describe('findAll', () => {
-    it('should return system and user categories', async () => {
+    it('should return the user own categories', async () => {
       const categories = [
-        { id: '1', slug: 'food', name: 'Alimentacion', userId: null },
         { id: '2', slug: 'custom', name: 'Custom', userId: 'user-1' },
       ];
       mockPrisma.category.findMany.mockResolvedValue(categories);
@@ -40,7 +39,8 @@ describe('CategoriesService', () => {
 
       expect(result).toEqual(categories);
       expect(mockPrisma.category.findMany).toHaveBeenCalledWith({
-        where: { OR: [{ userId: null }, { userId: 'user-1' }] },
+        where: { userId: 'user-1' },
+        orderBy: { name: 'asc' },
       });
     });
   });
