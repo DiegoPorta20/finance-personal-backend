@@ -9,9 +9,8 @@ export class CategoriesService {
 
   findAll(userId: string) {
     return this.prisma.category.findMany({
-      where: {
-        OR: [{ userId: null }, { userId }],
-      },
+      where: { userId },
+      orderBy: { name: 'asc' },
     });
   }
 
