@@ -1,6 +1,6 @@
 services:
   api:
-    image: ghcr.io/diegoporta20/finance-personal-backend:latest
+    image: 896489643360.dkr.ecr.us-east-2.amazonaws.com/finance-backend:latest
     container_name: finanzas-api
     restart: unless-stopped
     env_file: .env.production
