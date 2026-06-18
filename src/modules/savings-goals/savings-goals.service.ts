@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service.js';
 import { CreateSavingsGoalDto } from './dto/create-savings-goal.dto.js';
 import { UpdateSavingsGoalDto } from './dto/update-savings-goal.dto.js';
@@ -51,13 +55,39 @@ export class SavingsGoalsService {
     return this.prisma.savingsGoal.delete({ where: { id } });
   }
 
-  async addFunds(id: string, userId: string, amount: number) {
+  async addFunds(
+    id: string,
+    userId: string,
+    amount: number,
+    accountId?: string,
+  ) {
     const goal = await this.findOne(id, userId);
 
-    const updated = await this.prisma.savingsGoal.update({
-      where: { id },
-      data: { currentAmount: { increment: amount } },
-    });
+    // Si se indica una cuenta, el abono se descuenta de su balance (atómico).
+    if (accountId) {
+      const account = await this.prisma.account.findFirst({
+        where: { id: accountId, userId },
+      });
+      if (!account) {
+        throw new BadRequestException('Account not found or not owned by user');
+      }
+    }
+
+    const ops: any[] = [
+      this.prisma.savingsGoal.update({
+        where: { id },
+        data: { currentAmount: { increment: amount } },
+      }),
+    ];
+    if (accountId) {
+      ops.push(
+        this.prisma.account.update({
+          where: { id: accountId },
+          data: { balance: { decrement: amount } },
+        }),
+      );
+    }
+    const [updated] = await this.prisma.$transaction(ops);
 
     if (
       goal.currentAmount < goal.targetAmount &&

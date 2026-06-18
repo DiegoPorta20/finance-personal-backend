@@ -94,4 +94,73 @@ export class IncomeSourcesService {
       }
     }, 0);
   }
+
+  /// Genera las transacciones de ingresos recurrentes vencidos (nextDate <= hoy)
+  /// y avanza la próxima fecha. Se llama al abrir la app.
+  async generateDue(userId: string): Promise<{ generated: number }> {
+    const now = new Date();
+    const sources = await this.prisma.incomeSource.findMany({
+      where: { userId, nextDate: { lte: now } },
+    });
+
+    const incomeCategories = await this.prisma.category.findMany({
+      where: { userId, type: 'income' },
+    });
+    const bySlug = new Map(incomeCategories.map((c) => [c.slug, c]));
+    const fallback = incomeCategories[0];
+
+    let generated = 0;
+
+    for (const source of sources) {
+      let next = new Date(source.nextDate);
+      let guard = 0;
+      while (next <= now && guard < 24) {
+        const category = bySlug.get(source.type) ?? fallback;
+        if (!category) break;
+        await this.prisma.$transaction([
+          this.prisma.transaction.create({
+            data: {
+              type: 'income',
+              amount: source.amount,
+              date: new Date(next),
+              note: source.name,
+              accountId: source.accountId,
+              categoryId: category.id,
+              userId,
+            },
+          }),
+          this.prisma.account.update({
+            where: { id: source.accountId },
+            data: { balance: { increment: source.amount } },
+          }),
+        ]);
+        generated++;
+        next = this.addPeriod(next, source.periodicity);
+        guard++;
+      }
+      await this.prisma.incomeSource.update({
+        where: { id: source.id },
+        data: { nextDate: next },
+      });
+    }
+
+    return { generated };
+  }
+
+  private addPeriod(date: Date, periodicity: string): Date {
+    const d = new Date(date);
+    switch (periodicity) {
+      case 'weekly':
+        d.setDate(d.getDate() + 7);
+        break;
+      case 'biweekly':
+        d.setDate(d.getDate() + 14);
+        break;
+      case 'monthly':
+      default:
+        d.setMonth(d.getMonth() + 1);
+        break;
+    }
+    return d;
+  }
 }
