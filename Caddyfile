@@ -1,0 +1,11 @@
+# Reemplaza api.tudominio.com por tu dominio real (apuntando a la IP publica del EC2).
+# Caddy gestiona el certificado HTTPS de Let's Encrypt automaticamente.
+#
+# Si AUN NO tienes dominio: comenta este bloque, borra el servicio `caddy` del
+# docker-compose.prod.yml y agrega `ports: ["3000:3000"]` al servicio `api`
+# para entrar por http://IP_PUBLICA:3000 (abre el puerto 3000 en el security group).
+
+api.tudominio.com {
+	reverse_proxy api:3000
+	encode gzip
+}

@@ -1,0 +1,144 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  currency     String   @default("USD")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  accounts      Account[]
+  incomeSources IncomeSource[]
+  transactions  Transaction[]
+  categories    Category[]
+  budgets       Budget[]
+  savingsGoals  SavingsGoal[]
+  notifications Notification[]
+}
+
+model Account {
+  id        String   @id @default(uuid())
+  name      String
+  type      String   // bank, cash, digital_wallet
+  currency  String   @default("USD")
+  balance   Int      @default(0) // stored in cents
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions  Transaction[]
+  incomeSources IncomeSource[]
+
+  @@index([userId])
+}
+
+model IncomeSource {
+  id          String   @id @default(uuid())
+  name        String
+  type        String   // salary, freelance, rent_income, investment, other_income
+  amount      Int      // estimated amount in cents
+  periodicity String   // weekly, biweekly, monthly
+  nextDate    DateTime
+  accountId   String
+  userId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Transaction {
+  id         String   @id @default(uuid())
+  type       String   // income, expense
+  amount     Int      // stored in cents
+  date       DateTime
+  note       String?
+  accountId  String
+  categoryId String
+  userId     String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  account  Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id])
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, date])
+  @@index([userId, type])
+}
+
+model Category {
+  id     String  @id @default(uuid())
+  slug   String
+  name   String
+  icon   String  @default("more_horiz")
+  type   String  // income, expense
+  userId String?
+
+  user         User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  budgets      Budget[]
+
+  @@unique([slug, userId])
+  @@index([userId])
+}
+
+model Budget {
+  id         String @id @default(uuid())
+  amount     Int    // limit in cents
+  month      Int
+  year       Int
+  categoryId String
+  userId     String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  category Category @relation(fields: [categoryId], references: [id])
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([categoryId, month, year, userId])
+  @@index([userId])
+}
+
+model SavingsGoal {
+  id            String    @id @default(uuid())
+  name          String
+  targetAmount  Int       // in cents
+  currentAmount Int       @default(0) // in cents
+  deadline      DateTime?
+  userId        String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  title     String
+  message   String
+  type      String   // budget_alert, payment_reminder, goal_progress
+  read      Boolean  @default(false)
+  userId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
