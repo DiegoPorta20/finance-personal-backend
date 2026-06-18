@@ -14,8 +14,8 @@ export class AnalyticsController {
   @Get('spending-by-category')
   spendingByCategory(
     @CurrentUser() userId: string,
-    @Query('startDate') startDate: string,
-    @Query('endDate') endDate: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
   ) {
     return this.analyticsService.spendingByCategory(userId, startDate, endDate);
   }
