@@ -55,4 +55,9 @@ export class IncomeSourcesController {
   getMonthlyTotal(@CurrentUser() userId: string) {
     return this.incomeSourcesService.getMonthlyTotal(userId);
   }
+
+  @Post('generate-due')
+  generateDue(@CurrentUser() userId: string) {
+    return this.incomeSourcesService.generateDue(userId);
+  }
 }

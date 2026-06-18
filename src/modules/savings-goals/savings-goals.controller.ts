@@ -53,7 +53,12 @@ export class SavingsGoalsController {
     @CurrentUser() userId: string,
     @Body() dto: AddFundsDto,
   ) {
-    return this.savingsGoalsService.addFunds(id, userId, dto.amount);
+    return this.savingsGoalsService.addFunds(
+      id,
+      userId,
+      dto.amount,
+      dto.accountId,
+    );
   }
 
   @Delete(':id')

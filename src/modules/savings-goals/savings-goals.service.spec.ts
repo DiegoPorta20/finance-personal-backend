@@ -14,6 +14,7 @@ const mockPrisma = {
   notification: {
     create: jest.fn(),
   },
+  $transaction: jest.fn((ops: any[]) => Promise.all(ops)),
 };
 
 describe('SavingsGoalsService', () => {
