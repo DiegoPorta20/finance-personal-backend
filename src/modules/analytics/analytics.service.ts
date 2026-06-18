@@ -11,17 +11,30 @@ export class AnalyticsService {
 
   async spendingByCategory(
     userId: string,
-    startDate: string,
-    endDate: string,
+    startDate?: string,
+    endDate?: string,
   ) {
+    // Si no llegan fechas (o son inválidas), usar el mes actual por defecto.
+    const now = new Date();
+    const parsedStart = startDate ? new Date(startDate) : null;
+    const parsedEnd = endDate ? new Date(endDate) : null;
+    const start =
+      parsedStart && !Number.isNaN(parsedStart.getTime())
+        ? parsedStart
+        : new Date(now.getFullYear(), now.getMonth(), 1);
+    const end =
+      parsedEnd && !Number.isNaN(parsedEnd.getTime())
+        ? parsedEnd
+        : new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
     const results = await this.prisma.transaction.groupBy({
       by: ['categoryId'],
       where: {
         userId,
         type: 'expense',
         date: {
-          gte: new Date(startDate),
-          lte: new Date(endDate),
+          gte: start,
+          lte: end,
         },
       },
       _sum: { amount: true },
