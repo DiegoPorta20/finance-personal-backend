@@ -9,8 +9,17 @@ export class AnalyticsService {
     private readonly incomeSourcesService: IncomeSourcesService,
   ) {}
 
-  async spendingByCategory(
+  spendingByCategory(userId: string, startDate?: string, endDate?: string) {
+    return this.byCategory(userId, 'expense', startDate, endDate);
+  }
+
+  incomeByCategory(userId: string, startDate?: string, endDate?: string) {
+    return this.byCategory(userId, 'income', startDate, endDate);
+  }
+
+  private async byCategory(
     userId: string,
+    type: 'income' | 'expense',
     startDate?: string,
     endDate?: string,
   ) {
@@ -31,7 +40,7 @@ export class AnalyticsService {
       by: ['categoryId'],
       where: {
         userId,
-        type: 'expense',
+        type,
         date: {
           gte: start,
           lte: end,

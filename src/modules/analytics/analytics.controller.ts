@@ -20,6 +20,15 @@ export class AnalyticsController {
     return this.analyticsService.spendingByCategory(userId, startDate, endDate);
   }
 
+  @Get('income-by-category')
+  incomeByCategory(
+    @CurrentUser() userId: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
+    return this.analyticsService.incomeByCategory(userId, startDate, endDate);
+  }
+
   @Get('income-vs-expense')
   incomeVsExpense(
     @CurrentUser() userId: string,
